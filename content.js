@@ -19,21 +19,7 @@
   let userWasMuted = false;
   let lastReportedTime = 0;
 
-  // 1. Inject MAIN-world script for native player API access
-  function injectMainWorldScript() {
-    try {
-      if (document.getElementById('cleantube-injected-script')) return;
-      const script = document.createElement('script');
-      script.id = 'cleantube-injected-script';
-      script.src = chrome.runtime.getURL('inject.js');
-      script.onload = () => script.remove();
-      (document.head || document.documentElement).appendChild(script);
-    } catch (e) {
-      // Ignore if restricted
-    }
-  }
-
-  // 2. Load stored settings and sync changes
+  // 1. Load stored settings and sync changes
   function initConfig() {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.get(
@@ -376,7 +362,6 @@
 
   // Setup listeners and high-speed interval loop
   function setup() {
-    injectMainWorldScript();
     initConfig();
 
     // High frequency interval (every 50ms) ensures ads are killed instantaneously
