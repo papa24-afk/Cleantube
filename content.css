@@ -1,0 +1,107 @@
+/* ============================================================
+   CleanTube - YouTube Ad Blocker & Element Cleaner
+   ============================================================ */
+
+/* 1. Masthead & Header Ads */
+#masthead-ad,
+ytd-masthead-ad-v3-renderer,
+ytd-ad-slot-renderer,
+#masthead-ad-text,
+ytd-banner-promo-renderer,
+ytd-statement-banner-renderer,
+#top-container.ytd-rich-grid-renderer:has(ytd-ad-slot-renderer),
+ytd-rich-section-renderer:has(ytd-ad-slot-renderer) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 2. Video Player Overlays, Banners & Interstitials */
+.ytp-ad-action-interstitial-background-container,
+.ytp-ad-action-interstitial,
+.ytp-ad-overlay-container,
+.ytp-ad-message-container,
+.ytp-ad-text-overlay,
+.ytp-ad-image-overlay,
+.ytp-ad-player-overlay-flyout-cta,
+.ytp-ad-companion-slot,
+.ytp-ad-survey,
+.ytp-ad-info-dialog-container,
+#player-ads,
+#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+ytd-engagement-panel-section-list-renderer:has(ytd-ads-engagement-panel-content-renderer) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure the Skip button is always visible, clickable, and raised to top */
+.ytp-ad-skip-button-slot,
+.ytp-ad-skip-button-container,
+.ytp-ad-skip-button-modern,
+.ytp-skip-ad-button,
+.ytp-ad-skip-button,
+[class*="skip-button"],
+[class*="skip-ad-button"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2147483647 !important;
+}
+
+/* 3. In-Feed, Sidebar & Search Results Promoted Elements */
+ytd-in-feed-ad-layout-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytd-promoted-video-renderer,
+ytd-compact-promoted-video-renderer,
+ytd-display-ad-renderer,
+ytd-promoted-sparkles-text-search-renderer,
+ytd-search-pyv-renderer,
+ytd-clarification-renderer,
+div#sparkles-container,
+#fulfilled-ad-slot,
+div[id*="ad-slot"],
+div[class*="ad-slot"],
+ytd-action-companion-ad-renderer {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 4. Shorts Ad Cards */
+ytd-reel-video-renderer:has(ytd-ad-slot-renderer),
+ytd-reel-video-renderer:has(.ytd-in-feed-ad-layout-renderer),
+ytd-reel-video-renderer:has(#ad-badge),
+ytd-reel-video-renderer[is-ad] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* 5. Anti-Adblock Enforcement Modal & Backdrop Neutralization */
+ytd-enforcement-message-view-model,
+tp-yt-paper-dialog:has(ytd-enforcement-message-view-model),
+tp-yt-paper-dialog:has(#feedback.ytd-enforcement-message-view-model),
+yt-playability-error-supported-renderers:has(#container.ytd-enforcement-message-view-model) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Remove backdrop blur / overlay if anti-adblock modal triggers */
+tp-yt-iron-overlay-backdrop:has(+ tp-yt-paper-dialog ytd-enforcement-message-view-model) {
+  display: none !important;
+}
+
+/* Smooth layout correction when ads are hidden from rich grid */
+ytd-rich-item-renderer:has(ytd-ad-slot-renderer) {
+  display: none !important;
+}

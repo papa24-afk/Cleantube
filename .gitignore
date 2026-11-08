@@ -1,0 +1,16 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Browser generated extension metadata
+_metadata/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Temporary and Log files
+*.log
