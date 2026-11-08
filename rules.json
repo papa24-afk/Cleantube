@@ -50,7 +50,7 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "||youtube.com/api/stats/ads*",
-      "resourceTypes": ["xmlhttprequest", "beacon", "image", "other"]
+      "resourceTypes": ["xmlhttprequest", "ping", "image", "other"]
     }
   },
   {
