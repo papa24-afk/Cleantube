@@ -101,7 +101,7 @@
         buttons: 1
       };
 
-      ['pointerover', 'mouseover', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(eventType => {
+      ['pointerover', 'mouseover', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((eventType) => {
         element.dispatchEvent(new MouseEvent(eventType, eventInit));
       });
 
@@ -124,7 +124,6 @@
 
   // Search for ANY skip button and click it immediately
   function findAndClickSkipButton() {
-    // 1. Check known skip button selectors (including modern 2024-2026 designs)
     const selectors = [
       '.ytp-ad-skip-button-modern',
       '.ytp-skip-ad-button',
@@ -134,13 +133,9 @@
       'button.ytp-skip-ad-button',
       '.ytp-ad-skip-button-slot button',
       '.ytp-ad-skip-button-container button',
-      '[class*="skip-button"]',
-      '[class*="skip-ad-button"]',
-      '[class*="ytp-ad-skip"]',
-      '[class*="ytp-skip-ad"]',
       '[id^="skip-button:"] button',
-      'button[id*="skip"]',
-      'button[aria-label*="skip" i]',
+      'button[class*="skip-button"]',
+      'button[class*="skip-ad"]',
       '.ytp-ad-overlay-close-button',
       'button.ytp-ad-overlay-close-button'
     ];
@@ -150,24 +145,24 @@
       for (const el of elements) {
         if (isVisible(el)) {
           simulateClick(el);
+          window.dispatchEvent(new CustomEvent('cleantube-skip-ad'));
           return true;
         }
       }
     }
 
-    // 2. Text-based scan: find any button containing "Skip" inside the player
+    // Text-based fallback: find any button containing "Skip" inside the player
     const player = document.querySelector('#movie_player') ||
-                   document.querySelector('.html5-video-player') ||
-                   document.querySelector('ytd-player') ||
-                   document.body;
+                   document.querySelector('.html5-video-player');
 
     if (player) {
-      const candidates = player.querySelectorAll('button, div[role="button"], span[role="button"]');
+      const candidates = player.querySelectorAll('button, div[role="button"]');
       for (const btn of candidates) {
-        const text = (btn.textContent || btn.innerText || '').trim().toLowerCase();
+        const text = (btn.textContent || '').trim().toLowerCase();
         const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
         if ((text.includes('skip') || aria.includes('skip')) && isVisible(btn)) {
           simulateClick(btn);
+          window.dispatchEvent(new CustomEvent('cleantube-skip-ad'));
           return true;
         }
       }
@@ -176,54 +171,48 @@
     return false;
   }
 
-  // Comprehensive ad detection (checks classes, badges, timers, modules, and sponsored labels)
+  // Accurate ad detection without false positives
   function isAdPresent() {
     const player = document.querySelector('#movie_player') || document.querySelector('.html5-video-player');
+    if (!player) return false;
 
-    // Signal A: Player class names
-    if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {
+    // Signal A: Player class names (the definitive in-stream ad indicator)
+    if (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting')) {
       return true;
     }
 
-    // Signal B: Skip button is present
+    // Signal B: Skip button is present and visible
     const skipSelectors = [
       '.ytp-ad-skip-button-modern',
       '.ytp-skip-ad-button',
       '.ytp-ad-skip-button',
       '.ytp-ad-skip-button-text',
-      '[class*="skip-button"]',
-      '[class*="skip-ad-button"]'
+      'button.ytp-ad-skip-button-modern',
+      'button.ytp-skip-ad-button',
+      '[id^="skip-button:"] button'
     ];
     for (const sel of skipSelectors) {
-      const el = document.querySelector(sel);
+      const el = player.querySelector(sel);
       if (el && isVisible(el)) return true;
     }
 
-    // Signal C: "Sponsored" indicator or ad badge (bottom-left)
-    const adBadge = document.querySelector(
-      '.ytp-ad-badge, [class*="ytp-ad-badge"], .ytp-ad-simple-ad-badge, [class*="ad-info"], div.ytp-ad-text'
-    );
+    // Signal C: "Sponsored" indicator or ad badge with visible content
+    const adBadge = player.querySelector('.ytp-ad-badge, .ytp-ad-simple-ad-badge');
     if (adBadge && isVisible(adBadge)) return true;
 
-    // Signal D: Circular timer / progress spinner (top-right)
-    const spinner = document.querySelector(
-      'svg.ytp-ad-progress-spinner, circle.ytp-ad-progress-spinner, .ytp-ad-duration-remaining, .ytp-ad-preview-container, [class*="progress-spinner"]'
-    );
-    if (spinner && isVisible(spinner)) return true;
-
-    // Signal E: Ad module / overlay containers that are not empty
-    const adModule = document.querySelector('.ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .video-ads, .ytp-ad-module');
-    if (adModule && adModule.children.length > 0 && isVisible(adModule)) {
+    // Signal D: Ad text countdown / remaining
+    const adText = player.querySelector('.ytp-ad-text, .ytp-ad-duration-remaining');
+    if (adText && isVisible(adText) && (adText.textContent || '').trim().length > 0) {
       return true;
     }
 
     return false;
   }
 
-  // Report blocked ad (debounced)
+  // Report blocked ad (strictly once per ad session)
   function reportAdBlocked() {
     const now = Date.now();
-    if (now - lastReportedTime < 1500) return;
+    if (now - lastReportedTime < 2000) return;
     lastReportedTime = now;
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -293,29 +282,31 @@
     bypassAntiAdblockDialog();
     handleShortsAds();
 
-    // ALWAYS try to click skip button if one exists on the page
-    if (config.autoSkip) {
-      const clicked = findAndClickSkipButton();
-      if (clicked) {
-        reportAdBlocked();
-      }
-    }
-
     const video = getVideo();
     const adActive = isAdPresent();
 
     if (adActive && video) {
       if (!isHandlingAd) {
         isHandlingAd = true;
-        if (video.playbackRate && video.playbackRate <= 4) {
+        // Save user's original playback settings
+        if (video.playbackRate && video.playbackRate <= 4.0) {
           userPlaybackRate = video.playbackRate;
         }
         userWasMuted = video.muted;
+        reportAdBlocked();
+      }
+
+      // Trigger MAIN world native skip
+      window.dispatchEvent(new CustomEvent('cleantube-skip-ad'));
+
+      // Always try clicking skip button
+      if (config.autoSkip) {
+        findAndClickSkipButton();
       }
 
       // Fast-forward & mute the ad
       if (config.fastForward) {
-        // Mute immediately to eliminate sound
+        // Mute ad audio
         if (!video.muted) {
           video.muted = true;
         }
@@ -327,21 +318,20 @@
           try { video.playbackRate = 8.0; } catch (e2) {}
         }
 
-        // Jump to end of ad segment
-        if (isFinite(video.duration) && video.duration > 0) {
-          if (video.currentTime < video.duration - 0.1) {
-            video.currentTime = video.duration;
+        // Fast-forward near end so YouTube finishes the ad segment cleanly without freezing
+        if (isFinite(video.duration) && video.duration > 0.5) {
+          if (video.currentTime < video.duration - 0.2) {
+            video.currentTime = video.duration - 0.2;
           }
         }
-      }
 
-      // Keep video playing if paused by ad logic
-      if (video.paused && !video.ended) {
-        video.play().catch(() => {});
+        // Keep video playing so the ad finishes and transitions smoothly
+        if (video.paused) {
+          video.play().catch(() => {});
+        }
       }
-
-      reportAdBlocked();
     } else if (isHandlingAd) {
+      // Ad has finished, restore normal playback
       restoreNormalPlayback();
     }
   }
@@ -357,6 +347,9 @@
       if (!userWasMuted && video.muted) {
         video.muted = false;
       }
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
     }
   }
 
@@ -364,7 +357,7 @@
   function setup() {
     initConfig();
 
-    // High frequency interval (every 50ms) ensures ads are killed instantaneously
+    // Check every 50ms for instant reaction
     setInterval(() => {
       processAds();
     }, 50);
@@ -404,21 +397,10 @@
     }
 
     attachVideoListeners();
-    setInterval(attachVideoListeners, 500);
-
-    // Message listener for popup updates
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'SETTINGS_UPDATED') {
-          config = Object.assign(config, message.config);
-          applyConfig();
-          processAds();
-          sendResponse({ status: 'ok' });
-        }
-      });
-    }
+    setInterval(attachVideoListeners, 1000);
   }
 
+  // Initialize as soon as DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
   } else {

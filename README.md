@@ -1,4 +1,4 @@
-# CleanTube - Ad Blocker for YouTube™ (Manifest V3)
+# CleanTube - Ad Blocker for YouTube™ (Manifest V3) v1.1.2
 
 A fast, lightweight, and modern browser extension designed to block, skip, and accelerate ads on YouTube™ without breaking video playback or triggering ad-block detection walls.
 

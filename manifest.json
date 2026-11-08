@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CleanTube - Ad Blocker for YouTube",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Smart ad blocker & auto-skipper for YouTube. Block video ads, banners, popups, and sponsorships seamlessly.",
   "permissions": [
     "storage",

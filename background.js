@@ -14,8 +14,8 @@ chrome.runtime.onInstalled.addListener(() => {
         fastForward: data.fastForward !== undefined ? data.fastForward : true,
         hideBanners: data.hideBanners !== undefined ? data.hideBanners : true,
         bypassPopup: data.bypassPopup !== undefined ? data.bypassPopup : true,
-        adsBlockedCount: data.adsBlockedCount || 0,
-        timeSavedSeconds: data.timeSavedSeconds || 0
+        adsBlockedCount: (data.adsBlockedCount && data.adsBlockedCount < 500) ? data.adsBlockedCount : 0,
+        timeSavedSeconds: (data.timeSavedSeconds && data.adsBlockedCount < 500) ? data.timeSavedSeconds : 0
       };
 
       chrome.storage.local.set(defaults, () => {
@@ -81,9 +81,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Sync badge on startup
+// Clean up runaway counts from previous bug and sync badge
 chrome.storage.local.get(['adsBlockedCount'], (data) => {
   if (data && data.adsBlockedCount) {
-    updateBadge(data.adsBlockedCount);
+    if (data.adsBlockedCount > 500) {
+      chrome.storage.local.set({ adsBlockedCount: 0, timeSavedSeconds: 0 }, () => {
+        updateBadge(0);
+      });
+    } else {
+      updateBadge(data.adsBlockedCount);
+    }
   }
 });
